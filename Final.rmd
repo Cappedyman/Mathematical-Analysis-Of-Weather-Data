@@ -1,0 +1,1493 @@
+---
+title: "Mathematical Analysis of the change of Environmental Phenomena and Climate Diversity in the United States from January 1951 to April 2025."
+author: "Thomas Jackson"
+date: '2025-12-01'
+output:
+  pdf_document: 
+    includes:
+      in_header: reformat_paragraph.tex
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(data.table)
+library(Matrix)
+library(tidyverse)
+library(dplyr)
+library(GGally)
+library(cowplot)
+library(psych)
+library(FactoMineR)
+
+
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, results='hide',fig.show = 'hide')
+m_to_tex<- function(arr){
+  arr=round(arr,4)
+  rows<- apply(arr,MARGIN=1,paste,collapse=" & ")
+  matrix_string <- paste(rows,collapse = "\\\\")
+  return(paste("\\begin{bmatrix}",matrix_string,"\\end{bmatrix}"))
+}
+```
+# Midterm
+
+## Research Questions
+
+### Research Questions for the whole United States 
+
+
+1. What relation to the amount of casualties (Deaths/Injuries) per storm event do the daily averages by state of the variables precipitation (mm), maximum temperature ($^\circ C$), and minimum temperature ($^\circ C$) for the entire United States?
+
+2. What relation to the monetary amount of property damage per storm event (\$USD) do the daily averages by state of the variables precipitation (mm), maximum temperature ($^\circ C$), and minimum temperature ($^\circ C$) for the entire United States?
+
+3. Do the Eigenvalues of the symmetric matrix $X'X_{cas}$, given by the values of precipitation, and maximum and minimum temperature for the days with recorded casualties from storm events show any meaningful trends in the casualty data?
+
+4. What does the rank of our matrix $X'X_{cas}$ tell us about the independent variables?
+
+5. Can we confirm that the trace of the $X'X_{cas}$ is equal to the sum of its Eigenvalues?
+
+6. Is the determinant of $X'X_{cas}$ equal to the product of its Eigenvalues?
+
+7. Do the Eigenvalues of the symmetric matrix $X'X_{prop}$ , given by the values of precipitation, and maximum and minimum temperature for the days with recorded property damage from storms show any meaningful trends in the property damage data?
+
+8. What does the rank of our matrix $X'X_{prop}$ tell us about the independent variables?
+ 
+9. Does the trace of $X'X_{prop}$ equal the sum of the matrix's Eigenvalues?
+
+10. Is the determinant of $X'X_{prop}$ equal to the product of its Eigenvalues?
+
+11. What information does the singular value decomposition (SVD) of the matrix $X'X_{cas}$ give us?
+
+12. What practical applications of the SVD of the matrix $X'X_{cas}$ are there?
+
+13. What information does the SVD of the matrix $X'X_{prop}$ give us?
+
+14. What practical applications of the SVD of the matrix $X'X_{prop}$ are there?
+
+15. Does the Cholesky decomposition of the matrix $X'X_{cas}$ give us any extra information about the relation between the independent variables and the amount of casualties caused by the storm?
+
+16. Does the Cholesky decomposition of the matrix $X'X_{prop}$ give us any extra information about the relation between the independent variables and the total cost from property damage caused by the storm?
+
+17. What is the interpretation of the Spectral decomposition of the matrix $X'X_{cas}$? What are the possible reasons to use this decomposition?
+
+18. What is the interpretation of the Spectral decomposition of the matrix $X'X_{prop}$? What use-cases does this decomposition have?
+
+19. What conclusions can we draw about the relation of storm event casualties to daily averages over the entire U.S from our analysis?
+
+20. What conclusions can we draw about the relation of property damage due to storm events to daily averages over the entire U.S. from our analysis?
+
+
+******************************
+
+### Research Questions for New York State 
+
+
+21. What relation to the amount of casualties (Deaths/Injuries) per storm event do the daily averages in New York State of the variables precipitation (mm), maximum temperature ($^\circ C$), and minimum temperature ($^\circ C$) have when we preform Ordinary Least Squares on our data?
+
+22. How does this relation differ from the relation of daily averages to casualties from storm events by state for the entire U.S. ?
+
+23. What relation to the monetary amount of property damage per storm event (\$USD) do the daily averages in New York State of the variables precipitation (mm), maximum temperature ($^\circ C$), and minimum temperature ($^\circ C$) have when we preform Ordinary Least Squares on our data?
+
+24. How does this relation differ from the relation of daily averages to property damage from storm events by state for the entire U.S. ?
+
+25. Do the Eigenvalues of the symmetric matrix $X'X_{cas}$, given by the values of precipitation, and maximum and minimum temperature for the days with recorded casualties from storm events in New York State show any meaningful trends in the casualty data from storm events?
+
+26. What does the rank of our matrix $X'X_{cas}$ tell us about the independent variables?
+
+27. Can we confirm that the trace of the $X'X_{cas}$ is equal to the sum of its Eigenvalues?
+
+28. Is the determinant of $X'X_{cas}$ equal to the product of its Eigenvalues?
+
+29. Do the Eigenvalues of the symmetric matrix $X'X_{prop}$ , given by the values of precipitation, and maximum and minimum temperature for the days with recorded property damage from storms in New York State show any meaningful trends in the property damage data?
+
+30. What does the rank of our matrix $X'X_{prop}$ tell us about the independent variables?
+ 
+31. Does the trace of $X'X_{prop}$ equal the sum of the matrix's Eigenvalues?
+
+32. Is the determinant of $X'X_{prop}$ equal to the product of its Eigenvalues?
+
+33. What information does the singular value decomposition (SVD) of the matrix $X'X_{cas}$ give us?
+
+34. What practical applications of the SVD of the matrix $X'X_{cas}$ are there?
+
+35. What information does the SVD of the matrix $X'X_{prop}$ give us?
+
+36. What practical applications of the SVD of the matrix $X'X_{prop}$ are there?
+
+37. Does the Cholesky decomposition of the matrix $X'X_{cas}$ give us any extra information about the relation between the independent variables and the amount of casualties caused by the storm?
+
+38. Does the Cholesky decomposition of the matrix $X'X_{prop}$ give us any extra information about the relation between the independent variables and the total cost from property damage caused by the storm?
+
+39. What is the interpretation of the Spectral decomposition of the matrix $X'X_{cas}$? What are the possible reasons to use this decomposition?
+
+40. What is the interpretation of the Spectral decomposition of the matrix $X'X_{prop}$? What use-cases does this decomposition have?
+
+41. What conclusions can we draw about the relation of storm event casualties to daily averages for New York state from our analysis?
+
+42. What conclusions can we draw about the relation of property damage due to storm events to daily averages for New York state from our analysis?
+
+43. How do our conclusions about storm casualties for New York State differ from our conclusions for the entire United States?
+
+44. How do our conclusions about storm property damage for New York State differ from our conclusions for the entire United States?
+
+
+## Mathematical Analysis of the Entire United States since 1951
+
+### Loading our data
+
+First, we load in the Data set from our csv.
+```{r}
+weather_data = read.csv("Data/Weather.csv")
+head(weather_data)%>%knitr::kable("markdown")
+dat=weather_data[c("TMAX","TMIN","PRCP","DEATHS","INJURIES","PROPERTY_DAMAGE")]
+dat=dat[complete.cases(weather_data),]
+head(dat)%>%knitr::kable("markdown")
+```
+\
+
+Then, we find only the cases with complete rows
+```{r}
+# we get the complete cases of the independent variables
+dat=dat[complete.cases(weather_data[c("PRCP","TMAX","TMIN")]),]
+head(dat)%>%knitr::kable("markdown")
+summary(dat)
+```
+\
+
+
+
+Now we'll perform Least Squares on the data.
+```{r loading data}
+data_only=dat
+data_only$CASUALTIES<-as.numeric(data_only$DEATHS)+as.numeric(data_only$INJURIES)
+
+data_only=data_only[,c("TMAX","TMIN","PRCP","PROPERTY_DAMAGE","CASUALTIES")]
+
+  
+head(data_only)
+
+
+# filter out only non-zero entries for the dependent variables
+casualties=data_only%>%
+  filter(CASUALTIES>0) %>%
+  select(-"PROPERTY_DAMAGE")
+
+y1=casualties$CASUALTIES
+x_cas=as.matrix(casualties[,c("TMAX","TMIN","PRCP")])
+
+prop_dmg=data_only%>%
+  filter(PROPERTY_DAMAGE>0)%>%
+  select(-"CASUALTIES")
+
+# create y2 for dependent variable Property Damage (Dollars)
+y2=prop_dmg$PROPERTY_DAMAGE
+x_prop=as.matrix(prop_dmg[,c("TMAX","TMIN","PRCP")])
+
+
+# sample then plot the variables
+temp=data_only[sample(1:nrow(data_only),10000),]
+ggpairs(temp)
+
+ggsave("Images/pairs1.png", dpi=400,create.dir=T)
+```
+![](Images/pairs1.png)
+
+### Linear Regression/ Ordinary Least Squares
+
+#### Casualties
+```{r OLS_cas, results='markup'}
+x=x_cas
+y=y1
+x_1=as.matrix(bind_cols(1,x))
+XT_X=t(x_1)%*%x_1
+XT_X
+b=solve(XT_X)%*%t(x_1)%*%y
+m=lm(y~x)
+b
+m
+
+g1=ggplot(data=casualties,aes(PRCP,CASUALTIES))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xPRCP"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Precipitation (mm)")+
+  ylab("Storm Event Casualties")
+
+
+g2=ggplot(data=casualties,aes(TMAX,CASUALTIES))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMAX"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Max Temperature (deg C)")+
+  ylab("Storm Event Casualties")
+
+g3=ggplot(data=casualties,aes(TMIN,CASUALTIES))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMIN"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Min Temperature (deg C)")+
+  ylab("Storm Event Casualties")
+
+
+plot_grid(g1,g2,g3)
+ggsave2("Images/grid11.png")
+```
+\
+![](Images/grid11.png)
+
+
+This gives and equation of the Form $$ \text{Casualties}  = [`r m$coefficients["xPRCP"]` \cdot \text{Precipation}] +   [`r m$coefficients["xTMAX"]` \cdot \text{Max Temperature}`] + [`r m$coefficients["xTMIN"]` \cdot \text{Min Temperature}] +  [`r m$coefficients["(Intercept)"]`]$$
+
+This implies that deaths due to storms generally increase as the average maximum temperature of the state rises. This could be due to fact that storms generally take place in the more moderate temperatures ranges, or due to snow event deaths making up a large portion of deaths (further research and analysis needed). Also, the amount of deaths caused by storm related events decrease as the minimum temperature increases, this is likely due to the decrease in the loss of deaths from snow events and freezing temps. It is worth noting that tornadoes-- which make up a large portion of the death count from storms in this database-- can not occur until a dew point of roughly $55^{\circ}F$ is reached. Then storm related deaths obviously occur more when precipitation is higher because stronger storms usually bring heavier rainfall. 
+
+However, we can notice here that the plots do not necessarily show a good relationship from the OLS that we preformed. This probably means there is some non-linear model that is a better fit for these variables.
+
+
+#### Property Damage
+
+```{r OLS_prop, results='markup'}
+x=x_prop
+y=y2
+x_1=as.matrix(bind_cols(1,x))
+XT_X=t(x_1)%*%x_1
+XT_X
+b=solve(XT_X)%*%t(x_1)%*%y
+m=lm(y~x)
+b
+m
+
+
+g1=ggplot(data=prop_dmg,aes(PRCP,PROPERTY_DAMAGE))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xPRCP"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Precipitation (mm)")+
+  ylab("Property Damage (USD)")
+
+
+g2=ggplot(data=prop_dmg,aes(TMAX,PROPERTY_DAMAGE))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMAX"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Max Temperature (deg C)")+
+  ylab("Property Damage (USD)")
+
+g3=ggplot(data=prop_dmg,aes(TMIN,PROPERTY_DAMAGE))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMIN"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Min Temperature (deg C)")+
+  ylab("Property Damage (USD)")
+
+plot_grid(g1,g2,g3)
+ggsave2("Images/grid12.png")
+
+```
+
+![](Images/grid12.png)
+
+Here we see that property damage (\$USD) increases as the daily minimum average for the state increase, and decreases as the max temperature increases. This is likely due to storms occurring at more moderate temperatures, especially tornadoes which often account for more severe damages than other storms. The damage also increases with more precipitation. While the precipitation variable has a similar trend to the precipitation variable in the casualty data, the signs of the TMAX and TMIN coefficients are both swapped. This means the amount of casualties is highest at extreme ranges,  while property damage is more likely to be higher at moderate temperatures, with both rising due to increased precipitation.
+
+
+### Eigen Decomposition
+
+
+#### Casualties
+
+Now we find the Eigen-Decomposition of the matrix $X'X_{cas}$
+
+```{r Eigen_decomp_cas}
+x=x_cas
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+E = P%*%D%*%solve(P)
+E
+```
+
+
+
+The Eigen-Decomposition of the Matrix $X'X_{cas}$ is
+$$X'X_{cas}=`r m_to_tex(P)``r m_to_tex(D)``r m_to_tex(solve(P))`$$
+
+```{r  det_cas}
+x=x_cas
+det_XT_X=det(XT_X)
+det_XT_X
+prod(EI_XT_X$values)
+```
+
+The Determinant of the Matrix $X'X_{cas}$ is $`r det_XT_X`$.
+A non-zero determinant means that our matrix is non-singular, i.e. it has an inverse.
+
+Then our determinant is also equal to the product of our eigenvalues of $X'X_{cas}$ = $\prod_{\lambda \in \Lambda} \lambda$= `r prod(EI_XT_X$values)`
+
+```{r rank_cas}
+rank1 = rankMatrix(XT_X)
+rank1[[1]]
+```
+The rank of the Matrix $X'X_{cas}$ is $`r rank1[[1]]`$
+
+```{r trace_cas}
+trace_XT_X = sum(diag(XT_X))
+trace_XT_X
+sum(EI_XT_X$values)
+```
+
+The trace of the Matrix $X'X_{cas}$ is $`r trace_XT_X`$, this is equal to the sum of our eigenvalues, which is `r sum(eigen(XT_X)$values)`
+
+
+
+```{r E_cas}
+E_10=P%*%(D^0.10)%*%solve(P)
+E_10
+```
+The matrix $(X'X_{cas})^{0.10}$ is 
+\
+$(X'X_{cas})^{0.10}=$\
+$`r m_to_tex(XT_X)`^{0.10}$=
+\
+\
+$`r m_to_tex(round(P,4))``r m_to_tex(round(D,4))`^{0.10}`r m_to_tex(round(solve(P),4))`=$
+\
+\
+$`r m_to_tex(E_10)`$
+\
+
+#### Property Damage
+
+Now we find the Eigen-Decomposition of the matrix $X'X_{prop}$
+
+```{r Ei_prop}
+x=x_prop
+XT_X = t(x)%*%x
+XT_X
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+E = P%*%D%*%solve(P)
+E
+```
+
+
+
+The Eigen-Decomposition of the Matrix $X'X_{prop}$ is
+$$X'X_{prop}=`r m_to_tex(P)``r m_to_tex(D)``r m_to_tex(solve(P))`$$
+
+```{r det}
+det_XT_X=det(XT_X)
+det_XT_X
+```
+
+The Determinant of the Matrix $X'X_{prop}$ is $`r det_XT_X`$.
+A non-zero determinant means that our matrix is non-singular, i.e. it has an inverse.
+
+Then our determinant is also equal to the product of our eigenvalues of $X'X_{cas}$ = $\prod_{\lambda \in \Lambda} \lambda$= `r prod(EI_XT_X$values)`
+
+```{r}
+rank1 = rankMatrix(XT_X)
+rank1[[1]]
+```
+
+The rank of the Matrix $X'X_{prop}$ is $`r rank1[[1]]`$. 
+This is the number of independent variables (pivot columns) in $X'X_{prop}$
+
+```{r}
+trace_XT_X = sum(diag(XT_X))
+trace_XT_X
+```
+
+The trace of the Matrix $X'X_{prop}$ is $`r trace_XT_X`$, this is equal to the sum of our eigenvalues, which is `r sum(eigen(XT_X)$values)`
+
+```{r}
+E_10=P%*%(D^0.10)%*%solve(P)
+E_10
+```
+The matrix $(X'X_{prop})^{0.10}$ is 
+\
+$(X'X_{prop})^{0.10}=$\
+$`r m_to_tex(XT_X)`^{0.10}$=
+\
+\
+$`r m_to_tex(round(P,4))``r m_to_tex(round(D,4))`^{0.10}`r m_to_tex(round(solve(P),4))`=$
+\
+\
+$`r m_to_tex(E_10)`$
+\
+
+Eigenvectors are defined to be a vector v, with eigenvalues $\lambda$ such that $Av=\lambda v$ for some nxn matrix $A$. So the Eigendecomposition involves applying the transformation of the set of eigenvectors ($P$) to the standard basis, then scaling the resulting matrix by the eigenvalues, then transforming back into the standard basis by applying $P^{-1}$, giving us $A$.
+
+So, in our case this lets us do computations involving $X'X$ in the eigenspace, then transform it back into the standard basis. Namely, computing the powers of the matrix $X'X$ utilized the fact that $(PDP^{-1})^{n}=PD^nP^{-1}$, which allows us to compute the matrix $(X'X)^{.10}$.
+
+This gives us a square matrix $E$ such that $E^{10}=X'X$
+
+
+### Singluar Value Decomposition
+
+
+
+#### Casualties
+
+```{r}
+x=x_cas
+svd_X=svd(t(x)%*%x)
+svd_X
+D = svd_X$d
+U = svd_X$u
+V = svd_X$v
+
+U %*% diag(D) %*% t(V)
+
+# singular values of X
+sapply(svd_X$d,sqrt)
+
+```
+
+\
+
+With
+$X'X_{cas}=`r m_to_tex(t(x)%*%x)`$
+The Singular Value Decomposition of the matrix $X'X_{cas}$ is
+$$X'X_{cas}=`r m_to_tex(U)``r m_to_tex(diag(D))``r m_to_tex(t(V))`$$
+Singular value decomposition can be thought of as breaking down the matrix $M$ into a rotation of the basis, followed by
+a scaling by the singular values, then rotating again to achieve the matrix $M$.
+
+Above we have the case where the matrix is square, however if we wanted to preform this on the original $X$, we can also find the SVD. In fact, the SVD of the matrix $X$ has singular values that are the square root of the singular values of the matrix $X'X$.
+
+
+
+
+#### Property Damage
+
+```{r}
+x=x_prop
+svd_X=svd(t(x)%*%x)
+svd_X
+D = svd_X$d
+U = svd_X$u
+V = svd_X$v
+
+U %*% diag(D) %*% t(V)
+cat(D,sep=" & ")
+```
+
+With
+$X'X_{prop}=`r m_to_tex(t(x)%*%x)`$
+The Singular Value Decomposition of the matrix $X'X_{prop}$ is
+$$X'X_{prop}=`r m_to_tex(U)``r m_to_tex(diag(D))``r m_to_tex(t(V))`$$
+
+
+
+### Cholesky Decomposition
+
+
+
+#### Casualties
+
+The Cholesky Decomposition is the decomposition of the matrix $X'X$ into the form $X'X = LL^*$, where $L$ is a lower triangular matrix
+
+```{r}
+x=x_cas
+c=chol(t(x)%*%x)
+c
+t(c)%*%c
+```
+$X'X_{cas}=`r m_to_tex(XT_X)`$
+\
+\
+$`r m_to_tex(t(c))``r m_to_tex(c)`=$
+\
+\
+$`r m_to_tex(t(c)%*%c)`$
+\
+\
+
+#### Property Damage
+
+```{r}
+x=x_prop
+c=chol(t(x)%*%x)
+c
+t(c)%*%c
+```
+The Cholesky Decomposition for $X'X_{prop}$ is 
+\
+$X'X_{prop}=`r m_to_tex(XT_X)`$
+\
+\
+$`r m_to_tex(t(c))``r m_to_tex(c)`=$
+\
+\
+$`r m_to_tex(t(c)%*%c)`$
+\
+\
+
+### Spectral Decomposition 
+
+Our spectral decomposition uses the same matrices P and D from our Eigen-Decomposition
+
+#### Casualties
+
+```{r}
+x=x_cas
+# solving for eigen components
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+D=round(D,5)
+P=round(P,5)
+
+# spectral calculations
+P%*%D%*%t(P)
+
+```
+Here we see that we can use the transpose of the matrix P instead of the inverse to find a similar decomposition for the matrix $X'X_{cas}$ in the form of $PDP'$.
+\
+\
+$`r m_to_tex(P)` `r m_to_tex(D)` `r m_to_tex(t(P))`=$
+\
+\
+$`r m_to_tex(P%*%D%*%t(P))`$
+
+#### Property Damages
+
+```{r}
+x=x_prop
+
+# Solving for eigen
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+E = P%*%D%*%solve(P)
+
+P=EI_XT_X$vectors
+D=diag(EI_XT_X$values)
+P%*%D%*%t(P)
+```
+Here we see that we can use the transpose of the matrix P instead of the inverse to find a similar decomposition for the matrix $X'X_{prop}$ in the form of $PDP'$.
+\
+\
+$`r m_to_tex(P)` `r m_to_tex(D)` `r m_to_tex(t(P))`=$
+\
+\
+$`r m_to_tex(P%*%D%*%t(P))`$
+
+
+### Findings:
+  
+We found that the property damage is more likely to occur at moderate to warm temperatures, while casualties are more likely to occur at the temperature extremes. We see that both of these dependent variables increase with precipitation. We also found that the matrix $X'X$ has rank 3 for both the property damage and casualty matrices, meaning each of the variables are not linearly dependent on one another in either of these matrices. 
+  
+
+\newpage
+
+
+
+
+
+
+
+
+
+
+******************
+
+## Mathematical Analysis of New York State since 1951
+
+```{r}
+weather_data = read.csv("Data/Weather.csv")
+weather_data=weather_data %>%
+  filter(if_any(STATE,~.x=="New York"))
+head(weather_data)%>%knitr::kable("markdown")
+dat=weather_data[c("TMAX","TMIN","PRCP","DEATHS","INJURIES","PROPERTY_DAMAGE")]
+dat=dat[complete.cases(weather_data),]
+head(dat)%>%knitr::kable("markdown")
+```
+
+
+Then, we find only the cases with complete rows
+```{r}
+dat=dat[complete.cases(weather_data[c("PRCP","TMAX","TMIN")]),]
+head(dat)%>%knitr::kable("markdown")
+```
+\
+
+
+
+Now we'll perform Least Squares on the data.
+```{r results='markup'}
+data_only=dat
+data_only$CASUALTIES<-as.numeric(data_only$DEATHS)+as.numeric(data_only$INJURIES)
+
+data_only=data_only[,c("TMAX","TMIN","PRCP","PROPERTY_DAMAGE","CASUALTIES")]
+
+  
+head(data_only)
+
+# filter out only non-zero entries for the dependent variables
+casualties=data_only%>%
+  filter(CASUALTIES>0) %>%
+  select(-"PROPERTY_DAMAGE")
+
+y1=casualties$CASUALTIES
+x_cas=as.matrix(casualties[,c("TMAX","TMIN","PRCP")])
+
+prop_dmg=data_only%>%
+  filter(PROPERTY_DAMAGE>0)%>%
+  select(-"CASUALTIES")
+
+# create y2 for dependent variable Property Damage (Dollars)
+y2=prop_dmg$PROPERTY_DAMAGE
+x_prop=as.matrix(prop_dmg[,c("TMAX","TMIN","PRCP")])
+
+
+# plot the pairs of variables
+ggpairs(data_only)
+ggsave("Images/pairs2.png", dpi=400)
+```
+
+
+![](Images/pairs2.png)
+
+\
+
+### Least Squares / Linear Regression
+
+#### Casualties
+
+```{r results='markup'}
+x=x_cas
+y=y1
+x_1=as.matrix(bind_cols(1,x))
+XT_X=t(x_1)%*%x_1
+XT_X
+b=solve(XT_X)%*%t(x_1)%*%y
+m=lm(y~x)
+b
+m
+
+g1=ggplot(data=casualties,aes(PRCP,CASUALTIES))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xPRCP"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Precipitation (mm)")+
+  ylab("Storm Event Casualties")
+
+
+g2=ggplot(data=casualties,aes(TMAX,CASUALTIES))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMAX"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Max Temperature (deg C)")+
+  ylab("Storm Event Casualties")
+
+g3=ggplot(data=casualties,aes(TMIN,CASUALTIES))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMIN"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Min Temperature (deg C)")+
+  ylab("Storm Event Casualties")
+
+
+plot_grid(g1,g2,g3)
+
+ggsave2("Images/grid21.png")
+```
+
+
+![](Images/grid21.png)
+
+This gives and equation of the form $$ \text{Casualties}  = [`r m$coefficients["xPRCP"]` \cdot \text{Precipation}] +   [`r m$coefficients["xTMAX"]` \cdot \text{Max Temperature}] + [`r m$coefficients["xTMIN"]` \cdot \text{Min Temperature}] +  [`r m$coefficients["(Intercept)"]`]$$ from the R built-in lm function, and this seems to match our OLS calculations
+
+
+
+This implies that casualties due to storms generally ***decrease*** as the average maximum temperature of the state rises, this is different from the national analysis. Since New York likely has less frequent extreme storm events than other parts of the country during the warmer months, a large portion of New York state's storm related casualties may be due to snowstorms, which occur at lower temperatures.  Also, the amount of casualties due to storm events ***decreases***  as precipitation rises, this is counter-intuitive but, New York has a relatively moderate climate, so again this could be due to most casualties occurring at lower temperatures with less rain. However, I suspect that all of these variables have better fittings with non-linear models, as the extreme values of these variables likely bring more deaths, implying a non-linear relation.
+
+
+#### Property Damage
+
+```{r results='markup'}
+x=x_prop
+y=y2
+x_1=as.matrix(bind_cols(1,x))
+XT_X=t(x_1)%*%x_1
+XT_X
+b=solve(XT_X)%*%t(x_1)%*%y
+m=lm(y~x)
+b
+m
+
+
+g1=ggplot(data=prop_dmg,aes(PRCP,PROPERTY_DAMAGE))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xPRCP"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Precipitation (mm)")+
+  ylab("Property Damage (USD)")
+
+
+g2=ggplot(data=prop_dmg,aes(TMAX,PROPERTY_DAMAGE))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMAX"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Max Temperature (deg C)")+
+  ylab("Property Damage (USD)")
+
+g3=ggplot(data=prop_dmg,aes(TMIN,PROPERTY_DAMAGE))+
+  geom_point()+
+  geom_abline(slope=m$coefficients[["xTMIN"]],intercept=m$coefficients[["(Intercept)"]],col="red")+
+  xlab("Daily Average Min Temperature (deg C)")+
+  ylab("Property Damage (USD)")
+
+plot_grid(g1,g2,g3)
+ggsave2("Images/grid22.png")
+```
+
+![](Images/grid22.png)
+
+This gives and equation of the form $$ \text{Property Damage in Dollars}  = [`r m$coefficients["xPRCP"]` \cdot \text{Precipation}] +   [`r m$coefficients["xTMAX"]` \cdot \text{Max Temperature}`] + [`r m$coefficients["xTMIN"]` \cdot \text{Min Temperature}] +  [`r m$coefficients["(Intercept)"]`]$$ from the R built-in lm function and this matches the matrix calculations for OLS.
+
+
+The property damage linear model looks similar to the model for the entire United States, with the magnitude of the coefficients of each of the independent variables being slightly less. This likely means when New York sees storm related property damages they are less extreme than what would be seen in the rest of United States, due to moderate temperatures in New York.
+\
+
+### Eigen Decomposition
+
+
+
+#### Casualties
+
+Now we find the Eigen-Decomposition of the matrix $X'X_{cas}$
+
+```{r}
+x=x_cas
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+E = P%*%D%*%solve(P)
+E
+
+
+```
+
+
+
+The Eigen-Decomposition of the Matrix $X'X_{cas}$ is
+$$X'X_{cas}=`r m_to_tex(P)``r m_to_tex(D)``r m_to_tex(solve(P))`$$
+
+```{r}
+x=x_cas
+det_XT_X=det(XT_X)
+det_XT_X
+```
+
+The Determinant of the Matrix $X'X_{cas}$ is $`r det_XT_X`$.
+A non-zero determinant means that our matrix is non-singular, i.e. it has an inverse
+
+```{r}
+rank1 = rankMatrix(XT_X)
+rank1[[1]]
+```
+The rank of the Matrix $X'X_{cas}$ is $`r rank1[[1]]`$, meaning we have $`r rank1[[1]]`$ independent columns in $X'X_{cas}$
+
+```{r}
+trace_XT_X = sum(diag(XT_X))
+trace_XT_X
+```
+
+The trace of the Matrix $X'X_{cas}$ is $`r trace_XT_X`$
+
+```{r}
+E_10=P%*%(D^0.10)%*%solve(P)
+E_10
+```
+The matrix $(X'X_{cas})^{0.10}$ is 
+\
+$(X'X_{cas})^{0.10}=$\
+$`r m_to_tex(XT_X)`^{0.10}$=
+\
+\
+$`r m_to_tex(round(P,4))``r m_to_tex(round(D,4))`^{0.10}`r m_to_tex(round(solve(P),4))`=$
+\
+\
+$`r m_to_tex(E_10)`$
+\
+
+#### Property Damage
+
+Now we find the Eigen-Decomposition of the matrix $X'X_{prop}$
+
+```{r}
+x=x_prop
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+E = P%*%D%*%solve(P)
+E
+```
+
+
+
+The Eigen-Decomposition of the Matrix $X'X_{prop}$ is
+$$X'X_{prop}=`r m_to_tex(P)``r m_to_tex(D)``r m_to_tex(solve(P))`$$
+
+```{r}
+det_XT_X=det(XT_X)
+det_XT_X
+```
+
+The Determinant of the Matrix $X'X_{prop}$ is $`r det_XT_X`$.
+A non-zero determinant means that our matrix is non-singular, i.e. it has an inverse. Then, our determinant is also equal to the product of our eigenvalues of $X'X_{prop}$ = $\prod_{\lambda \in \Lambda} \lambda$= `r prod(EI_XT_X$values)`
+
+```{r}
+rank1 = rankMatrix(XT_X)
+rank1[[1]]
+```
+The rank of the Matrix $X'X_{prop}$ is $`r rank1[[1]]`$, this is the number of independent columns (pivots)
+
+```{r}
+trace_XT_X = sum(diag(XT_X))
+trace_XT_X
+```
+
+The trace of the Matrix $X'X_{prop}$ is $`r trace_XT_X`$, this is equal to the sum of the eigenvalues
+
+```{r}
+E_10=P%*%(D^0.10)%*%solve(P)
+E_10
+```
+The matrix $(X'X_{prop})^{0.10}$ is 
+\
+$(X'X_{prop})^{0.10}=$\
+$`r m_to_tex(XT_X)`^{0.10}$=
+\
+\
+$`r m_to_tex(round(P,4))``r m_to_tex(round(D,4))`^{0.10}`r m_to_tex(round(solve(P),4))`=$
+\
+\
+$`r m_to_tex(E_10)`$
+\
+
+### Singluar Value Decomposition
+
+
+
+#### Casualties
+
+```{r}
+
+x=x_cas
+svd_X=svd(t(x)%*%x)
+D = svd_X$d
+U = svd_X$u
+V = svd_X$v
+
+U %*% diag(D) %*% t(V)
+```
+\
+
+With
+$X'X_{cas}=`r m_to_tex(t(x)%*%x)`$
+The Singular Value Decomposition of the matrix $X'X_{cas}$ is
+$$X'X_{cas}=`r m_to_tex(U)``r m_to_tex(diag(D))``r m_to_tex(t(V))`$$
+
+
+#### Property Damage
+
+```{r}
+x=x_prop
+svd_X=svd(t(x)%*%x)
+D = svd_X$d
+U = svd_X$u
+V = svd_X$v
+
+U %*% diag(D) %*% t(V)
+```
+
+With
+$X'X_{prop}=`r m_to_tex(t(x)%*%x)`$
+The Singular Value Decomposition of the matrix $X'X_{prop}$ is
+$$X'X_{prop}=`r m_to_tex(U)``r m_to_tex(diag(D))``r m_to_tex(t(V))`$$
+
+### Cholesky Decomposition
+
+
+
+#### Casualties
+
+The Cholesky Decomposition is the decomposition of the matrix $X'X$ into the form $X'X = LL^*$, where $L$ is a lower triangular matrix
+
+```{r}
+x=x_cas
+c=chol(t(x)%*%x)
+c
+t(c)%*%c
+```
+$X'X_{cas}=`r m_to_tex(XT_X)`$
+\
+\
+$`r m_to_tex(t(c))``r m_to_tex(c)`=$
+\
+\
+$`r m_to_tex(t(c)%*%c)`$
+\
+\
+
+#### Property Damage
+
+```{r}
+x=x_prop
+c=chol(t(x)%*%x)
+c
+t(c)%*%c
+```
+The Cholesky Decomposition for $X'X_{prop}$ is 
+\
+$X'X_{prop}=`r m_to_tex(XT_X)`$
+\
+\
+$`r m_to_tex(t(c))``r m_to_tex(c)`=$
+\
+\
+$`r m_to_tex(t(c)%*%c)`$
+\
+\
+
+### Spectral Decomposition 
+
+Our spectral decomposition uses the same matrices P and D from our Eigen-Decomposition
+
+#### Casualties
+
+```{r}
+x=x_cas
+# solving for eigen components
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+D=round(D,5)
+P=round(P,5)
+
+# spectral calculations
+P%*%D%*%t(P)
+
+```
+Here we see that we can use the transpose of the matrix P instead of the inverse to find a similar decomposition for the matrix $X'X_{cas}$ in the form of $PDP'$.
+\
+\
+$`r m_to_tex(P)` `r m_to_tex(D)` `r m_to_tex(t(P))`=$
+\
+\
+$`r m_to_tex(P%*%D%*%t(P))`$
+
+#### Property Damages
+
+```{r}
+x=x_prop
+
+# Solving for eigen
+XT_X = t(x)%*%x
+EI_XT_X = eigen(XT_X)
+P = EI_XT_X$vectors
+D = diag(EI_XT_X$values)
+E = P%*%D%*%solve(P)
+
+P=EI_XT_X$vectors
+D=diag(EI_XT_X$values)
+P%*%D%*%t(P)
+```
+Here we see that we can use the transpose of the matrix P instead of the inverse to find a similar decomposition for the matrix $X'X_{prop}$ in the form of $PDP'$.
+\
+\
+$`r m_to_tex(P)` `r m_to_tex(D)` `r m_to_tex(t(P))`=$
+\
+\
+$`r m_to_tex(P%*%D%*%t(P))`$
+
+***************************
+
+## Midterm Conclusion
+
+The data from the regression model for casualty for the entire United States had different trends for each of the independent variables, when compared to the regression model for New York State. This shows that weather related casualty predictions in New York State should use a separate model for prediction based on these variables. We also found that there is less monetary damage to properties received from storms in New York than in the rest of the United States, with the trends of the independent variables being the same. We see that property damage decreases as the maximum daily average for the state increases, and increases as the daily average minimum temperature and average amount of precipitation increase. Overall, I believe that from the results, the linear model for this data is not the best suited model, and further analysis could be done on this data set with non-linear methods.
+
+\newpage
+
+# Final Project 
+
+## Research Questions 
+
+### Research Questions for Entire United States
+
+1. How can we interpret the Matrix $X'X_{prop}$ as a quadratic form?
+
+2. How can we interpret the Matrix $X'X_{cas}$ as a quadratic form?
+
+3. How do we perform Weighted Least Squares on the property damage data for the United States?
+
+4. What weights should our weight matrix $W_{prop}$ take? 
+
+5. What is the format of the matrix $W_{prop}$?
+
+6. How does this compare to the OLS model we found earlier?
+
+7. How do we perform weighted Least squares on the casualty data for the United States?
+
+8. What weights should our weight matrix $W_{cas}$ take? 
+
+9. What is the format of the matrix $W_{cas}$?
+
+10. How does this compare to the OLS model we found earlier?
+
+11. What is the Principle Component Analysis for the property damage data?
+
+12. Does this Principle Component Analysis imply we can reduce the dimension of our data, without losing substantial information about the relation between weather readings and the amount of property damage that storm events cause?
+
+13. What is the Principle Component Analysis for the Casualty data?
+
+14. Does this Principle Component Analysis imply we can reduce the dimension of our data, without losing substantial information about the relation between weather readings and casualties caused by storm events?
+
+
+
+### Research Questions for New York State
+
+15. How can we interpret the Matrix $X'X_{prop}$ as a quadratic form?
+
+16. How can we interpret the Matrix $X'X_{cas}$ as a quadratic form?
+
+17. How do we perform Weighted Least Squares on the property damage data for New York State?
+
+18. What weights should our weight matrix $W_{prop}$ take? 
+
+19. What is the format of the matrix $W_{prop}$?
+
+20. How does this compare to the OLS model we found earlier?
+
+21. How do we perform weighted Least squares on the casualty data for New York State?
+
+22. What weights should our weight matrix $W_{cas}$ take? 
+
+23. What is the format of the matrix $W_{cas}$?
+
+24. How does this compare to the OLS model we found earlier?
+
+25. What is the Principle Component Analysis for the property damage data?
+
+26. Does this Principle Component Analysis imply we can reduce the dimension of our data, without losing substantial information about the relation between weather readings and the amount of property damage that storm events cause?
+
+27. What is the Principle Component Analysis for the Casualty data?
+
+28. Does this Principle Component Analysis imply we can reduce the dimension of our data, without losing substantial information about the relation between weather readings and casualties caused by storm events?
+
+## Analysis of the Entire United States
+
+
+
+```{r include=FALSE}
+weather_data = read.csv("Data/Weather.csv")
+head(weather_data)%>%knitr::kable("markdown")
+dat=weather_data[c("TMAX","TMIN","PRCP","DEATHS","INJURIES","PROPERTY_DAMAGE")]
+dat=dat[complete.cases(weather_data),]
+data_only=dat
+data_only$CASUALTIES<-as.numeric(data_only$DEATHS)+as.numeric(data_only$INJURIES)
+
+data_only=data_only[,c("TMAX","TMIN","PRCP","PROPERTY_DAMAGE","CASUALTIES")]
+
+head(data_only)
+# filter out only non-zero entries for the dependent variables
+casualties=data_only%>%
+  filter(CASUALTIES>0) %>%
+  select(-"PROPERTY_DAMAGE")
+
+y1=casualties$CASUALTIES
+x_cas=as.matrix(casualties[,c("TMAX","TMIN","PRCP")])
+
+prop_dmg=data_only%>%
+  filter(PROPERTY_DAMAGE>0)%>%
+  select(-"CASUALTIES")
+
+# create y2 for dependent variable Property Damage (Dollars)
+y2=prop_dmg$PROPERTY_DAMAGE
+x_prop=as.matrix(prop_dmg[,c("TMAX","TMIN","PRCP")])
+
+```
+
+### Quadratic Form
+
+
+
+#### Property Damage
+
+```{r}
+x=x_prop
+XT_X=t(x)%*%x
+XT_X
+
+```
+This matrix $X'X_{prop}=`r m_to_tex(XT_X)`$ gives us an equation with quadratic form $`r XT_X[1,1] `x_1^2 + `r XT_X[2,2]`x_2^2 + `r XT_X[3,3]`x_3^2 + `r XT_X[1,2] * 2`x_1 x_2 + `r XT_X[1,3] * 2` x_1 x_3 + `r XT_X[2,3] * 2`x_2 x_3$
+
+#### Casualties 
+
+```{r}
+
+x=x_cas
+XT_X=t(x)%*%x
+XT_X
+
+```
+The matrix $X'X_{cas}=`r m_to_tex(XT_X)`$ gives us an equation with quadratic form $`r XT_X[1,1] `x_1^2 + `r XT_X[2,2]`x_2^2 + `r XT_X[3,3]`x_3^2 + `r XT_X[1,2] * 2`x_1 x_2 + `r XT_X[1,3] * 2` x_1 x_3 + `r XT_X[2,3] * 2`x_2 x_3$
+
+### Weighted Least Squares
+
+
+
+
+#### Property Damage
+
+```{r}
+x=x_prop
+y=y2
+x_1=as.matrix(bind_cols(1,x))
+m=lm(y~x)
+as.matrix(m$coefficients)
+
+
+beta=solve(t(x_1)%*%x_1)%*%t(x_1)%*%y
+
+
+W=bandSparse(nrow(x_1),nrow(x_1),0,list(1/(abs(y-(x_1%*%beta)))))
+wls=solve(t(x_1)%*%W%*%x_1)%*%t(x_1)%*%W%*%y
+wls
+```
+
+For weighted least squares we have the solution $\hat \beta = (X'WX)^{-1}t(X)WY$, where $W$ is our weight matrix.
+To define $W$ we make a square matrix with `r nrow(x)` rows and columns, so that we have $dim(X'WX)=dim(X'X)$.
+This square matrix has the reciprocal of the residuals of each measurement on the diagonal. Since this matrix is very large with $`r nrow(x)^2`$ entries, it would be very hard to fit in memory with the standard matrix object. Luckily since the majority of these entries are 0, we have a sparse matrix which let's us fix this by using the bandSparse function from the matrix package.
+
+The weights in $W$ are given according to $w_i= \dfrac{1}{|y_i - X_i \beta|}$, this formulation is called Least Absolute Residual Regression.
+
+Comparing our OLS to the new model gives us:
+
+$$\beta_{OLS}=`r m_to_tex(as.matrix(m$coefficients))` \text{ and } \beta_{WLS}=`r m_to_tex(wls)`$$
+
+The Weighted Least Squares model drastically scales down all the components of $\beta$ compared to the Ordinary Least Squares. The sign of each component stays the same, our weights are all positive.
+
+#### Casualties 
+
+```{r}
+x=x_cas
+y=y1
+
+x_1=as.matrix(bind_cols(1,x))
+
+m=lm(y~x)
+as.matrix(m$coefficients)
+
+beta=solve(t(x_1)%*%x_1)%*%t(x_1)%*%y
+W=bandSparse(nrow(x_1),nrow(x_1),0,list(1/(abs(y-(x_1%*%beta)))))
+wls=solve(t(x_1)%*%W%*%x_1)%*%t(x_1)%*%W%*%y
+wls
+```
+
+The weights in $W$ are given according to $w_i= \dfrac{1}{|y_i - X_i \beta|}$ again. So we have $W$ is a $`r nrow(x_1)` \times `r nrow(x_1)`$ matrix. 
+
+Comparing our OLS to the new model gives us:
+
+$$\beta_{OLS}=`r m_to_tex(as.matrix(m$coefficients))` \text{ and } \beta_{WLS}=`r m_to_tex(wls)`$$
+\
+This shows that we have a smaller intercept, more weight given to TMAX, more negative weight given to TMIN, and less weight given to precipitation.  
+
+
+### Principle Component Analysis
+
+
+
+
+#### Property Damage
+
+```{r}
+
+x=x_prop
+ 
+pca_x=PCA(x,graph=F)
+g1=plot.PCA(pca_x, choix='var',select='contrib 2')
+g2=plot.PCA(pca_x,axes=c(1,2), cex=1,choix='ind',label = 'none', habillage = 1)
+
+
+plot_grid(g1,g2)
+ggsave2("Images/PCA_Prop_USA.png")
+
+```
+
+```{r  fig.show='hold',fig.align='center'}
+eigenvalues=pca_x$eig
+barplot(eigenvalues[, 2], names.arg=1:nrow(eigenvalues), 
+       main = "Variances",
+       xlab = "Principal Components",
+       ylab = "Percentage of Variances",
+       col ="steelblue")
+lines(x = 1:nrow(eigenvalues), eigenvalues[, 2], 
+      type="b", pch=19, col = "red")
+
+```
+
+
+![](Images/PCA_Prop_USA.png)
+
+This shows that Minimum Temperature and Precipitation account for ~98% of the variance in the property damage data.
+This indicates that we can apply dimension reduction to our data in order to make a more concise model, only depending on Minimum temperature and Precipitation.
+
+The results of the PCA for property damage are surprising to me, since I would assume that most property damage would occur in the southern U.S. during hurricane/storm season, or in tornado Alley during the peak months, leading to more weight being applied to the Maximum temperature. However, our PCA shows that more weight is applied to the Minimum temperature, which I do not have any explanation for.
+
+
+#### Casualties 
+
+
+```{r}
+x=x_cas
+ 
+pca_x=PCA(x,graph=F)
+g1=plot.PCA(pca_x, choix='var',select='contrib 2')
+g2=plot.PCA(pca_x,axes=c(1,2), cex=1,choix='ind',label = 'none', habillage = 1)
+
+
+plot_grid(g1,g2)
+ggsave2("Images/PCA_Cas_USA.png")
+```
+
+```{r fig.show='hold',fig.align='center'}
+eigenvalues=pca_x$eig
+barplot(eigenvalues[, 2], names.arg=1:nrow(eigenvalues), 
+       main = "Variances",
+       xlab = "Principal Components",
+       ylab = "Percentage of Variances",
+       col ="steelblue")
+lines(x = 1:nrow(eigenvalues), eigenvalues[, 2], 
+      type="b", pch=19, col = "red")
+```
+
+![](Images/PCA_Cas_USA.png)
+
+The results of the PCA on casualty data for the United States shows that the Precipitation and Max Temperature have the most weight to them. 
+
+They account for ~99% of the variance, and it is reasonable to assume that a majority of the US endures events that cause massive amounts of casualties during the warmer months, when extreme storms rip through the Southeast, and tornadoes tear up the Midwest.
+
+
+## Analysis of New York State
+
+```{r include=FALSE}
+weather_data = read.csv("Data/Weather.csv")
+weather_data=weather_data %>%
+  filter(if_any(STATE,~.x=="New York"))
+head(weather_data)%>%knitr::kable("markdown")
+dat=weather_data[c("TMAX","TMIN","PRCP","DEATHS","INJURIES","PROPERTY_DAMAGE")]
+dat=dat[complete.cases(weather_data),]
+head(dat)%>%knitr::kable("markdown")
+
+dat=dat[complete.cases(weather_data[c("PRCP","TMAX","TMIN")]),]
+head(dat)%>%knitr::kable("markdown")
+
+
+data_only=dat
+data_only$CASUALTIES<-as.numeric(data_only$DEATHS)+as.numeric(data_only$INJURIES)
+
+data_only=data_only[,c("TMAX","TMIN","PRCP","PROPERTY_DAMAGE","CASUALTIES")]
+
+  
+head(data_only)
+
+# filter out only non-zero entries for the dependent variables
+casualties=data_only%>%
+  filter(CASUALTIES>0) %>%
+  select(-"PROPERTY_DAMAGE")
+
+y1=casualties$CASUALTIES
+x_cas=as.matrix(casualties[,c("TMAX","TMIN","PRCP")])
+
+prop_dmg=data_only%>%
+  filter(PROPERTY_DAMAGE>0)%>%
+  select(-"CASUALTIES")
+
+# create y2 for dependent variable Property Damage (Dollars)
+y2=prop_dmg$PROPERTY_DAMAGE
+x_prop=as.matrix(prop_dmg[,c("TMAX","TMIN","PRCP")])
+
+```
+
+
+
+### Quadratic Form
+
+
+
+#### Property Damage
+
+
+```{r}
+x=x_prop
+XT_X=t(x)%*%x
+XT_X
+```
+
+The matrix $X'X_{prop}=`r m_to_tex(XT_X)`$ gives us an equation with quadratic form $`r XT_X[1,1] `x_1^2 + `r XT_X[2,2]`x_2^2 + `r XT_X[3,3]`x_3^2 + `r XT_X[1,2] * 2`x_1 x_2 + `r XT_X[1,3] * 2` x_1 x_3 + `r XT_X[2,3] * 2`x_2 x_3$
+
+
+#### Casualties 
+
+```{r}
+x=x_cas
+XT_X=t(x)%*%x
+XT_X
+```
+
+The matrix $X'X_{cas}=`r m_to_tex(XT_X)`$ gives us an equation with quadratic form $`r XT_X[1,1] `x_1^2 + `r XT_X[2,2]`x_2^2 + `r XT_X[3,3]`x_3^2 + `r XT_X[1,2] * 2`x_1 x_2 + `r XT_X[1,3] * 2` x_1 x_3 + `r XT_X[2,3] * 2`x_2 x_3$
+
+
+### Weighted Least Squares
+
+
+
+#### Property Damage
+
+
+```{r}
+x=x_prop
+y=y2
+
+x_1=as.matrix(bind_cols(1,x))
+
+m=lm(y~x)
+as.matrix(m$coefficients)
+
+beta=solve(t(x_1)%*%x_1)%*%t(x_1)%*%y
+W=bandSparse(nrow(x_1),nrow(x_1),0,list(1/(abs(y-(x_1%*%beta)))))
+wls=solve(t(x_1)%*%W%*%x_1)%*%t(x_1)%*%W%*%y
+wls
+```
+
+The weights in $W$ are given according to $w_i= \dfrac{1}{|y_i - X_i \beta|}$ again. So we have $W$ is a $`r nrow(x_1)` \times `r nrow(x_1)`$ matrix. 
+
+Comparing our OLS to the new model gives us:
+
+$$\beta_{OLS}=`r m_to_tex(as.matrix(m$coefficients))` \text{ and } \beta_{WLS}=`r m_to_tex(wls)`$$
+
+The weights of the Weighted Least Squares model are significantly scaled down, indicating that the residuals are rather significant in the Ordinary Least Squares model. This means our WLS model is hopefully more accurate in predicting property damage.
+
+#### Casualties 
+
+```{r}
+x=x_cas
+y=y1
+
+x_1=as.matrix(bind_cols(1,x))
+
+m=lm(y~x)
+as.matrix(m$coefficients)
+
+beta=solve(t(x_1)%*%x_1)%*%t(x_1)%*%y
+W=bandSparse(nrow(x_1),nrow(x_1),0,list(1/(abs(y-(x_1%*%beta)))))
+wls=solve(t(x_1)%*%W%*%x_1)%*%t(x_1)%*%W%*%y
+wls
+```
+
+The weights in $W$ are given according to $w_i= \dfrac{1}{|y_i - X_i \beta|}$ again. So we have $W$ is a $`r nrow(x_1)` \times `r nrow(x_1)`$ matrix. 
+
+Comparing our OLS to the new model gives us:
+
+$$\beta_{OLS}=`r m_to_tex(as.matrix(m$coefficients))` \text{ and } \beta_{WLS}=`r m_to_tex(wls)`$$
+
+Again, all of the weights are scaled down a good amount, none of the signs of the weights change-- as expected.
+
+
+### Principle Component Analysis
+
+
+#### Property Damage
+
+```{r}
+x=x_prop
+ 
+pca_x=PCA(x,graph=F)
+g1=plot.PCA(pca_x, choix='var',select='contrib 2')
+g2=plot.PCA(pca_x,axes=c(1,2), cex=1,choix='ind',label = 'none', habillage = 1)
+
+
+plot_grid(g1,g2)
+ggsave2("Images/PCA_Prop_NYS.png")
+```
+
+```{r fig.show='hold', fig.align="center"}
+eigenvalues=pca_x$eig
+barplot(eigenvalues[, 2], names.arg=1:nrow(eigenvalues), 
+       main = "Variances",
+       xlab = "Principal Components",
+       ylab = "Percentage of Variances",
+       col ="steelblue")
+lines(x = 1:nrow(eigenvalues), eigenvalues[, 2], 
+      type="b", pch=19, col = "red")
+```
+
+![](Images/PCA_Prop_NYS.png)
+
+Here we can see that the two most influential principle components on the number of property damage are the amount of precipitation and the maximum temperature for the day. Since these two combined account for ~99% of the variance, we can find a model that predicts the amount of property damage from storm events with similar accuracy to our current model without using Minimum Temperature as an independent variable. 
+
+These two variables probably account for most of the variance since damaging storm events like tornadoes and hurricanes occur at warmer temperatures, and bring more precipitation.
+
+This result is different from the property damage result for the entire United States, further analysis of the data is needed to understand why this is the case.
+
+
+
+#### Casualties 
+
+```{r}
+x=x_cas
+ 
+pca_x=PCA(x,graph=F)
+
+g1=plot.PCA(pca_x, choix='var',select='contrib 2')
+g2=plot.PCA(pca_x,axes=c(1,2), cex=1,choix='ind',label = 'none', habillage = 1)
+plot_grid(g1,g2)
+ggsave2("Images/PCA_Cas_NYS.png")
+
+```
+
+```{r  fig.show='hold',fig.align='center'}
+eigenvalues=pca_x$eig
+barplot(eigenvalues[, 2], names.arg=1:nrow(eigenvalues), 
+       main = "Variances",
+       xlab = "Principal Components",
+       ylab = "Percentage of Variances",
+       col ="steelblue")
+lines(x = 1:nrow(eigenvalues), eigenvalues[, 2], 
+      type="b", pch=19, col = "red")
+```
+
+![](Images/PCA_Cas_NYS.png)
+
+For this we have that the amount of casualties is most dependent on precipitation and minimum temperature for New York State. This is likely because of poor driving conditions caused by frequent winter storms.
+
+This also differs from the rest of the United States where Maximum temperature has more weight on the variance than minimum temperature.
+
+
+
+## Final Conclusion
+
+The Weighted Least squares analysis provided us with a new predictive model for both the United States and New York state, for property damage and casualties. While the effectiveness of this model needs to be tested, these new models provide alternative results from the Ordinary Least squares models of the same data. The Principle Component Analysis gave us some insight on the differences between New York State and the United States that reinforce some of our findings from the midterm project that showed clear differences in these two geographic scopes for the trends of property damage and casualties from storm events. Overall, we have not found a great predicative model for our data, but we have made found enough evidence to conclude that our scope for our model should be state-wide, or at least more local than Country-wide.
+
+
+\newpage
+
+# Project Summary
+
+We have shown that the trends for the casualties and property damage from weather events for the entire United States differ from trends for the State of New York. By employing various mathematical techniques, we can conclude that analysis of casualties and property damage from storm events should be done on a state-wide level, instead of a national level. The difference in biomes across the United States varies too much to have a good predictor that is solely based on Minimum Temperature, Maximum Temperature and Precipitation. Our results should tells us that we need to look for a model that relies on local weather data, and that we should consider using more predicative variables when we try to make a new model for predicting both casualties and property damage from storm damage. While we did not have any amazing findings from our analysis, we still have more information on how to build a better model for these data sets.
+
+\newpage
+
+# SOURCES:
+
+## NOAA:
+  National Climate Grid Daily v1-0-0:
+  https://www.ncei.noaa.gov/pub/data/daily-grids/v1-0-0/
+
+  Severe Weather Data Inventory, Storm Events Database:
+  https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/
+
+# TOOLS:
+
+## xan, the CSV Magician
+
+  Guillaume Plique, Béatrice Mazoyer, Laura Miguel, César Pichon, Anna Charles, & Julien Pontoire. (2025). xan, the CSV magician. (0.50.0). Zenodo. https://doi.org/10.5281/zenodo.15310200
+
